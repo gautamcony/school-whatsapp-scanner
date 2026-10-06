@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width,
+        initial-scale=1.0,
+        maximum-scale=1.0,
+        user-scalable=no">
+
+  <title>School WhatsApp Scanner</title>
+
+  <!-- QR / Barcode Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"
+          type="text/javascript"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f6f9;
+      color: #222;
+    }
+
+    .app {
+      max-width: 650px;
+      margin: auto;
+      min-height: 100vh;
+      background: white;
+    }
+
+    .header {
+      background: #174ea6;
+      color: white;
+      padding: 18px 16px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .header p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .content {
+      padding: 14px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #dfe5eb;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-weight: bold;
+      font-size: 17px;
+      margin-bottom: 10px;
+    }
+
+    #reader {
+      width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 9px;
+      padding: 13px;
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #174ea6;
+      color: white;
+    }
+
+    .success {
+      background: #188038;
+      color: white;
+    }
+
+    .warning {
+      background: #f9ab00;
+      color: #222;
+    }
+
+    .danger {
+      background: #d93025;
+      color: white;
+    }
+
+    .secondary {
+      background: #e8eaed;
+      color: #222;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #b8c2cc;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .info-box {
+      background: #f5f7fa;
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 3px;
+    }
+
+    .info-value {
+      font-weight: bold;
+      font-size: 14px;
+      word-break: break-word;
+    }
+
+    .status {
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .status.info {
+      display: block;
+      background: #e8f0fe;
+      color: #174ea6;
+    }
+
+    .status.success-status {
+      display: block;
+      background: #e6f4ea;
+      color: #137333;
+    }
+
+    .status.error {
+      display: block;
+      background: #fce8e6;
+      color: #c5221f;
+    }
+
+    .status.warning-status {
+      display: block;
+      background: #fef7e0;
+      color: #8a5a00;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .phone-valid {
+      color: #137333;
+      font-weight: bold;
+    }
+
+    .phone-invalid {
+      color: #c5221f;
+      font-weight: bold;
+    }
+
+    .duplicate-warning {
+      background: #fff4ce;
+      border: 1px solid #f9ab00;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      color: #7a5200;
+      font-size: 14px;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #777;
+      padding: 15px;
+    }
+
+    @media (max-width: 450px) {
+      .student-info {
+        grid-template-columns: 1fr;
+      }
+
+      .header h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>📱 School WhatsApp Scanner</h1>
+    <p>Student Communication Assistant</p>
+  </div>
+
+  <div class="content">
+
+    <!-- STATUS -->
+    <div id="statusBox" class="status"></div>
+
+    <!-- SCANNER -->
+    <div class="card">
+
+      <div class="card-title">
+        📷 Scan Student ID
+      </div>
+
+      <div id="reader"></div>
+
+      <button id="startScannerBtn"
+              class="primary"
+              onclick="startScanner()">
+        Start Camera Scanner
+      </button>
+
+      <button id="stopScannerBtn"
+              class="secondary hidden"
+              onclick="stopScanner()">
+        Stop Scanner
+      </button>
+
+      <p class="small">
+        Point the phone camera at the student's QR code or barcode.
+      </p>
+
+    </div>
+
+
+    <!-- MANUAL ID -->
+    <div class="card">
+
+      <div class="card-title">
+        🔢 Manual Student ID
+      </div>
+
+      <input
+        type="text"
+        id="manualStudentId"
+        placeholder="Enter Student ID">
+
+      <button class="secondary"
+              onclick="manualLookup()">
+        Find Student
+      </button>
+
+    </div>
+
+
+    <!-- STUDENT INFORMATION -->
+    <div id="studentCard" class="card hidden">
+
+      <div class="card-title">
+        👨‍🎓 Student Information
+      </div>
+
+      <div class="student-info">
+
+        <div class="info-box">
+          <div class="info-label">Student ID</div>
+          <div id="studentIdDisplay"
+               class="info-value"></div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Student Name</div>
+          <div id="studentNameDisplay"
+               class="info-value"></div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Class</div>
+          <div id="classDisplay"
+               class="info-value"></div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Section</div>
+          <div id="sectionDisplay"
+               class="info-value"></div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Parent Name</div>
+          <div id="parentNameDisplay"
+               class="info-value"></div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">Language</div>
+          <div id="languageDisplay"
+               class="info-value"></div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="info-label">Parent WhatsApp Number</div>
+        <div id="phoneDisplay"
+             class="info-value"></div>
+      </div>
+
+    </div>
+
+
+    <!-- MESSAGE SECTION -->
+    <div id="messageCard" class="card hidden">
+
+      <div class="card-title">
+        📝 Prepare Parent Message
+      </div>
+
+      <label for="messageType">
+        Message Type
+      </label>
+
+      <select id="messageType"
+              onchange="prepareMessage()">
+
+        <option value="">-- Select Message Type --</option>
+
+        <option value="Present">
+          Present
+        </option>
+
+        <option value="Late arrival">
+          Late arrival
+        </option>
+
+        <option value="Absent">
+          Absent
+        </option>
+
+        <option value="Homework not done">
+          Homework not done
+        </option>
+
+        <option value="Good performance / appreciation">
+          Good performance / appreciation
+        </option>
+
+        <option value="Meeting request">
+          Meeting request
+        </option>
+
+        <option value="Custom">
+          Custom
+        </option>
+
+      </select>
+
+
+      <div id="duplicateBox"
+           class="duplicate-warning hidden">
+      </div>
+
+
+      <label for="messageText">
+        Message Preview / Edit
+      </label>
+
+      <textarea
+        id="messageText"
+        placeholder="Your message will appear here..."></textarea>
+
+
+      <button class="success"
+              onclick="openWhatsApp()">
+        💬 Open WhatsApp
+      </button>
+
+
+      <button class="secondary"
+              onclick="clearStudent()">
+        🔄 Scan Another Student
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="footer">
+    School WhatsApp Scanner • Teacher-assisted communication
+  </div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   CONFIGURATION
+   ============================================================ */
+
+/*
+IMPORTANT:
+Replace ONLY the two values below.
+
+1. WEB_APP_URL:
+Paste your working Google Apps Script Web App URL ending with /exec
+
+2. SECRET_KEY:
+Paste the same secret key that you entered in Code.gs
+*/
+
+const WEB_APP_URL =
+  "https://script.google.com/macros/s/AKfycbzljClQKHW58LBZ5JU1hZ8JrfLmv9N8bMiFaWR7lM6mO8MTfzmJ4gNYvFw3VzSPV73x/exec";
+
+const SECRET_KEY =
+  "KVAshokScanner#0555";
+
+
+/*
+These can be changed later if required.
+*/
+
+const SCHOOL_NAME =
+  "PM SHRI Kendriya Vidyalaya Ashok Nagar, Chennai";
+
+const TEACHER_NAME =
+  "Class Teacher";
+
+
+/* ============================================================
+   GLOBAL VARIABLES
+   ============================================================ */
+
+let scanner = null;
+
+let scannerRunning = false;
+
+let currentStudent = null;
+
+let lastScannedId = "";
+
+let lastScanTime = 0;
+
+let whatsappOpened = false;
+
+
+/* ============================================================
+   STATUS MESSAGE
+   ============================================================ */
+
+function showStatus(message, type = "info") {
+
+  const box = document.getElementById("statusBox");
+
+  box.className = "status " + type;
+
+  box.textContent = message;
+
+}
+
+
+/* ============================================================
+   CHECK CONFIGURATION
+   ============================================================ */
+
+function checkConfiguration() {
+
+  if (
+    WEB_APP_URL.includes("PASTE_YOUR") ||
+    SECRET_KEY.includes("PASTE_YOUR")
+  ) {
+
+    showStatus(
+      "Please enter your Web App URL and Secret Key in the HTML configuration section.",
+      "error"
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+
+/* ============================================================
+   START CAMERA
+   ============================================================ */
+
+async function startScanner() {
+
+  if (!checkConfiguration()) {
+    return;
+  }
+
+  if (scannerRunning) {
+    return;
+  }
+
+  showStatus(
+    "Starting camera. Please allow camera permission if requested.",
+    "info"
+  );
+
+  try {
+
+    scanner = new Html5Qrcode("reader");
+
+    const config = {
+      fps: 10,
+
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+
+        const minSize =
+          Math.min(viewfinderWidth, viewfinderHeight);
+
+        const boxSize =
+          Math.floor(minSize * 0.70);
+
+        return {
+          width: boxSize,
+          height: boxSize
+        };
+      },
+
+      aspectRatio: 1.0
+    };
+
+
+    await scanner.start(
+
+      {
+        facingMode: "environment"
+      },
+
+      config,
+
+      onScanSuccess,
+
+      onScanFailure
+
+    );
+
+
+    scannerRunning = true;
+
+    document
+      .getElementById("startScannerBtn")
+      .classList.add("hidden");
+
+    document
+      .getElementById("stopScannerBtn")
+      .classList.remove("hidden");
+
+
+    showStatus(
+      "Scanner is ready. Scan the student's ID.",
+      "success-status"
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    showStatus(
+      "Camera could not start. Check camera permission and make sure this app is opened using HTTPS.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   STOP CAMERA
+   ============================================================ */
+
+async function stopScanner() {
+
+  if (!scanner || !scannerRunning) {
+    return;
+  }
+
+  try {
+
+    await scanner.stop();
+
+    scanner.clear();
+
+  }
+
+  catch (error) {
+
+    console.log(error);
+
+  }
+
+  scannerRunning = false;
+
+  document
+    .getElementById("startScannerBtn")
+    .classList.remove("hidden");
+
+  document
+    .getElementById("stopScannerBtn")
+    .classList.add("hidden");
+
+}
+
+
+/* ============================================================
+   SCAN SUCCESS
+   ============================================================ */
+
+function onScanSuccess(decodedText, decodedResult) {
+
+  const studentId =
+    String(decodedText).trim();
+
+  const now = Date.now();
+
+  /*
+  Prevent repeated camera readings of the same barcode
+  within 3 seconds.
+  */
+
+  if (
+    studentId === lastScannedId &&
+    (now - lastScanTime) < 3000
+  ) {
+
+    return;
+
+  }
+
+  lastScannedId = studentId;
+
+  lastScanTime = now;
+
+
+  /* Beep */
+
+  playBeep();
+
+
+  /* Vibration */
+
+  if (
+    navigator.vibrate
+  ) {
+
+    navigator.vibrate(200);
+
+  }
+
+
+  lookupStudent(studentId);
+
+}
+
+
+/* ============================================================
+   SCAN FAILURE
+   ============================================================ */
+
+function onScanFailure(error) {
+
+  /*
+  Ignore normal camera scanning failures.
+  html5-qrcode calls this repeatedly while looking
+  for a barcode.
+  */
+
+}
+
+
+/* ============================================================
+   BEEP
+   ============================================================ */
+
+function playBeep() {
+
+  try {
+
+    const AudioContext =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    const audioContext =
+      new AudioContext();
+
+    const oscillator =
+      audioContext.createOscillator();
+
+    const gain =
+      audioContext.createGain();
+
+    oscillator.connect(gain);
+
+    gain.connect(audioContext.destination);
+
+    oscillator.frequency.value = 1000;
+
+    gain.gain.value = 0.15;
+
+    oscillator.start();
+
+    oscillator.stop(
+      audioContext.currentTime + 0.15
+    );
+
+  }
+
+  catch (error) {
+
+    console.log("Beep unavailable.");
+
+  }
+
+}
+
+
+/* ============================================================
+   MANUAL LOOKUP
+   ============================================================ */
+
+function manualLookup() {
+
+  const studentId =
+    document
+      .getElementById("manualStudentId")
+      .value
+      .trim();
+
+  if (!studentId) {
+
+    showStatus(
+      "Please enter a Student ID.",
+      "error"
+    );
+
+    return;
+  }
+
+  lookupStudent(studentId);
+
+}
+
+
+/* ============================================================
+   API CALL
+   ============================================================ */
+
+async function apiRequest(payload) {
+
+  if (!checkConfiguration()) {
+
+    throw new Error(
+      "Application configuration is incomplete."
+    );
+
+  }
+
+
+  /*
+  IMPORTANT:
+  text/plain is deliberately used instead of
+  application/json to avoid unnecessary CORS
+  preflight requests with Google Apps Script.
+  */
+
+  const response =
+    await fetch(
+      WEB_APP_URL,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "text/plain;charset=utf-8"
+        },
+
+        body: JSON.stringify(payload)
+      }
+    );
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Server returned HTTP " +
+      response.status
+    );
+
+  }
+
+
+  const text =
+    await response.text();
+
+
+  let data;
+
+  try {
+
+    data =
+      JSON.parse(text);
+
+  }
+
+  catch (error) {
+
+    console.error(text);
+
+    throw new Error(
+      "The server returned an unexpected response."
+    );
+
+  }
+
+
+  return data;
+
+}
+
+
+/* ============================================================
+   LOOKUP STUDENT
+   ============================================================ */
+
+async function lookupStudent(studentId) {
+
+  showStatus(
+    "Looking up Student ID: " + studentId,
+    "info"
+  );
+
+
+  try {
+
+    const result =
+      await apiRequest({
+
+        action: "lookup",
+
+        secretKey: SECRET_KEY,
+
+        studentId: studentId
+
+      });
+
+
+    if (!result.success) {
+
+      showStatus(
+        result.message ||
+        "Student not found.",
+        "error"
+      );
+
+      clearStudentDisplay();
+
+      return;
+
+    }
+
+
+    currentStudent =
+      result.student;
+
+
+    displayStudent(
+      currentStudent
+    );
+
+
+    document
+      .getElementById("messageCard")
+      .classList.remove("hidden");
+
+
+    document
+      .getElementById("messageType")
+      .value = "";
+
+
+    document
+      .getElementById("messageText")
+      .value = "";
+
+
+    document
+      .getElementById("duplicateBox")
+      .classList.add("hidden");
+
+
+    if (
+      currentStudent.phoneValid !== true
+    ) {
+
+      showStatus(
+        "Student found, but the parent's phone number is missing or invalid. Please correct ParentPhone in the Master sheet.",
+        "error"
+      );
+
+    }
+
+    else {
+
+      showStatus(
+        "Student found successfully. Select a message type.",
+        "success-status"
+      );
+
+    }
+
+
+    /*
+    Stop camera after successful student scan.
+    */
+
+    if (scannerRunning) {
+
+      await stopScanner();
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    showStatus(
+      "Unable to contact the school server. Check the Web App URL, internet connection and Apps Script deployment.",
+      "error"
+    );
+
+  }
+
+}
+
+
+/* ============================================================
+   DISPLAY STUDENT
+   ============================================================ */
+
+function displayStudent(student) {
+
+  document
+    .getElementById("studentCard")
+    .classList.remove("hidden");
+
+
+  document
+    .getElementById("studentIdDisplay")
+    .textContent =
+      student.studentId || "";
+
+
+  document
+    .getElementById("studentNameDisplay")
+    .textContent =
+      student.name || "";
+
+
+  document
+    .getElementById("classDisplay")
+    .textContent =
+      student.className || "";
+
+
+  document
+    .getElementById("sectionDisplay")
+    .textContent =
+      student.section || "";
+
+
+  document
+    .getElementById("parentNameDisplay")
+    .textContent =
+      student.parentName || "";
+
+
+  document
+    .getElementById("languageDisplay")
+    .textContent =
+      student.preferredLanguage || "English";
+
+
+  const phone =
+    document.getElementById("phoneDisplay");
+
+
+  if (student.phoneValid) {
+
+    phone.textContent =
+      "+91 " +
+      student.parentPhone;
+
+    phone.className =
+      "info-value phone-valid";
+
+  }
+
+  else {
+
+    phone.textContent =
+      "Invalid / Missing phone number";
+
+    phone.className =
+      "info-value phone-invalid";
+
+  }
+
+}
+
+
+/* ============================================================
+   CLEAR STUDENT DISPLAY
+   ============================================================ */
+
+function clearStudentDisplay() {
+
+  document
+    .getElementById("studentCard")
+    .classList.add("hidden");
+
+  document
+    .getElementById("messageCard")
+    .classList.add("hidden");
+
+  currentStudent = null;
+
+}
+
+
+/* ============================================================
+   CLEAR EVERYTHING
+   ============================================================ */
+
+function clearStudent() {
+
+  currentStudent = null;
+
+  whatsappOpened = false;
+
+  document
+    .getElementById("manualStudentId")
+    .value = "";
+
+  document
+    .getElementById("messageType")
+    .value = "";
+
+  document
+    .getElementById("messageText")
+    .value = "";
+
+  document
+    .getElementById("duplicateBox")
+    .classList.add("hidden");
+
+  clearStudentDisplay();
+
+  showStatus(
+    "Ready for the next student.",
+    "info"
+  );
+
+
+  lastScannedId = "";
+
+}
+
+
+/* ============================================================
+   DATE AND TIME
+   ============================================================ */
+
+function getCurrentDate() {
+
+  const now = new Date();
+
+  return now.toLocaleDateString(
+    "en-IN",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    }
+  );
+
+}
+
+
+function getCurrentTime() {
+
+  const now = new Date();
+
+  return now.toLocaleTimeString(
+    "en-IN",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
+    }
+  );
+
+}
+
+
+/* ============================================================
+   MESSAGE TEMPLATES
+   ============================================================ */
+
+const MESSAGE_TEMPLATES = {
+
+
+  English: {
+
+    "Present":
+      "Dear {ParentName},\n\n" +
+      "This is to inform you that {StudentName} of Class {Class}-{Section} is present in school today ({Date}).\n\n" +
+      "Regards,\n{TeacherName}\n{SchoolName}",
+
+
+    "Late arrival":
+      "Dear {ParentName},\n\n" +
+      "This is to inform you that {StudentName} of Class {Class}-{Section} arrived late to school today ({Date}) at approximately {Time}.\n\n" +
+      "Regards,\n{TeacherName}\n{SchoolName}",
+
+
+    "Absent":
+      "Dear {ParentName},\n\n" +
+      "This is to inform you that {StudentName} of Class {Class}-{Section} was marked absent today ({Date}).\n\n" +
+      "Please contact the school/class teacher if required.\n\n" +
+      "Regards,\n{TeacherName}\n{SchoolName}",
+
+
+    "Homework not done":
+      "Dear {ParentName},\n\n" +
+      "This is to inform you that {StudentName} of Class {Class}-{Section} has not completed the assigned homework today ({Date}). Kindly ensure that the pending work is completed.\n\n" +
+      "Regards,\n{TeacherName}\n{SchoolName}",
+
+
+    "Good performance / appreciation":
+      "Dear {ParentName},\n\n" +
+      "We are pleased to share that {StudentName} of Class {Class}-{Section} has shown good performance and positive participation. We appreciate the student's effort and encourage continued progress.\n\n" +
+      "Regards,\n{TeacherName}\n{SchoolName}",
+
+
+    "Meeting request":
+      "Dear {ParentName},\n\n" +
+      "We would like to request a meeting regarding {StudentName} of Class {Class}-{Section}. Kindly contact the class teacher/school to coordinate a suitable time.\n\n" +
+      "Regards,\n{TeacherName}\n{SchoolName}",
+
+
+    "Custom":
+      ""
+
+  },
+
+
+  Tamil: {
+
+    "Present":
+      "அன்பார்ந்த பெற்றோர்,\n\n" +
+      "{StudentName}, வகுப்பு {Class}-{Section}, இன்று ({Date}) பள்ளிக்கு வருகை புரிந்துள்ளார்.\n\n" +
+      "நன்றி,\n{TeacherName}\n{SchoolName}",
+
+
+    "Late arrival":
+      "அன்பார்ந்த பெற்றோர்,\n\n" +
+      "{StudentName}, வகுப்பு {Class}-{Section}, இன்று ({Date}) காலை தாமதமாக பள்ளிக்கு வந்துள்ளார். வருகை நேரம்: {Time}.\n\n" +
+      "நன்றி,\n{TeacherName}\n{SchoolName}",
+
+
+    "Absent":
+      "அன்பார்ந்த பெற்றோர்,\n\n" +
+      "{StudentName}, வகுப்பு {Class}-{Section}, இன்று ({Date}) பள்ளியில் வருகையற்றவராக பதிவு செய்யப்பட்டுள்ளார்.\n\n" +
+      "தேவையானால் பள்ளி / வகுப்பு ஆசிரியரை தொடர்பு கொள்ளவும்.\n\n" +
+      "நன்றி,\n{TeacherName}\n{SchoolName}",
+
+
+    "Homework not done":
+      "அன்பார்ந்த பெற்றோர்,\n\n" +
+      "{StudentName}, வகுப்பு {Class}-{Section}, இன்று ({Date}) வழங்கப்பட்ட வீட்டுப்பாடத்தை முடிக்கவில்லை. நிலுவையில் உள்ள பணியை முடிக்க உதவுமாறு கேட்டுக்கொள்கிறோம்.\n\n" +
+      "நன்றி,\n{TeacherName}\n{SchoolName}",
+
+
+    "Good performance / appreciation":
+      "அன்பார்ந்த பெற்றோர்,\n\n" +
+      "{StudentName}, வகுப்பு {Class}-{Section}, சிறப்பாக செயல்பட்டு நேர்மறையான பங்கேற்பை வெளிப்படுத்தியுள்ளார். மாணவரின் முயற்சியை நாங்கள் பாராட்டுகிறோம்.\n\n" +
+      "நன்றி,\n{TeacherName}\n{SchoolName}",
+
+
+    "Meeting request":
+      "அன்பார்ந்த பெற்றோர்,\n\n" +
+      "{StudentName}, வகுப்பு {Class}-{Section} தொடர்பாக பெற்றோர் சந்திப்பு ஒன்றை ஏற்பாடு செய்ய விரும்புகிறோம். பொருத்தமான நேரத்தை ஒருங்கிணைக்க வகுப்பு ஆசிரியர் / பள்ளியை தொடர்பு கொள்ளவும்.\n\n" +
+      "நன்றி,\n{TeacherName}\n{SchoolName}",
+
+
+    "Custom":
+      ""
+
+  }
+
+};
+
+
+/* ============================================================
+   BUILD MESSAGE
+   ============================================================ */
+
+function prepareMessage() {
+
+  if (!currentStudent) {
+
+    return;
+
+  }
+
+
+  const type =
+    document
+      .getElementById("messageType")
+      .value;
+
+
+  if (!type) {
+
+    document
+      .getElementById("messageText")
+      .value = "";
+
+    return;
+
+  }
+
+
+  const language =
+    normalizeLanguage(
+      currentStudent.preferredLanguage
+    );
+
+
+  let template =
+    MESSAGE_TEMPLATES[language][type];
+
+
+  if (!template) {
+
+    template =
+      MESSAGE_TEMPLATES.English[type];
+
+  }
+
+
+  const message =
+    template
+      .replaceAll(
+        "{ParentName}",
+        currentStudent.parentName || "Parent"
+      )
+      .replaceAll(
+        "{StudentName}",
+        currentStudent.name || ""
+      )
+      .replaceAll(
+        "{Class}",
+        currentStudent.className || ""
+      )
+      .replaceAll(
+        "{Section}",
+        currentStudent.section || ""
+      )
+      .replaceAll(
+        "{Date}",
+        getCurrentDate()
+      )
+      .replaceAll(
+        "{Time}",
+        getCurrentTime()
+      )
+      .replaceAll(
+        "{TeacherName}",
+        TEACHER_NAME
+      )
+      .replaceAll(
+        "{SchoolName}",
+        SCHOOL_NAME
+      );
+
+
+  document
+    .getElementById("messageText")
+    .value = message;
+
+
+  if (type !== "Custom") {
+
+    checkDuplicate(type);
+
+  }
+
+  else {
+
+    document
+      .getElementById("duplicateBox")
+      .classList.add("hidden");
+
+  }
+
+}
+
+
+/* ============================================================
+   LANGUAGE
+   ============================================================ */
+
+function normalizeLanguage(language) {
+
+  if (!language) {
+
+    return "English";
+
+  }
+
+  const value =
+    String(language)
+      .trim()
+      .toLowerCase();
+
+
+  if (
+    value === "tamil" ||
+    value === "ta" ||
+    value === "தமிழ்"
+  ) {
+
+    return "Tamil";
+
+  }
+
+
+  return "English";
+
+}
+
+
+/* ============================================================
+   CHECK DUPLICATE
+   ============================================================ */
+
+async function checkDuplicate(messageType) {
+
+  if (!currentStudent) {
+    return;
+  }
+
+
+  try {
+
+    const result =
+      await apiRequest({
+
+        action: "checkDuplicate",
+
+        secretKey: SECRET_KEY,
+
+        studentId:
+          currentStudent.studentId,
+
+        messageType:
+          messageType
+
+      });
+
+
+    const box =
+      document.getElementById(
+        "duplicateBox"
+      );
+
+
+    if (result.duplicate) {
+
+      box.textContent =
+        "⚠️ This student has already received/logged a '" +
+        messageType +
+        "' message today. Please check before sending again.";
+
+      box.classList.remove(
+        "hidden"
+      );
+
+    }
+
+    else {
+
+      box.classList.add(
+        "hidden"
+      );
+
+    }
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+  }
+
+}
+
+
+/* ============================================================
+   VALIDATE PHONE
+   ============================================================ */
+
+function getWhatsAppNumber() {
+
+  if (!currentStudent) {
+
+    throw new Error(
+      "No student selected."
+    );
+
+  }
+
+
+  const raw =
+    String(
+      currentStudent.parentPhone || ""
+    )
+    .replace(/\D/g, "");
+
+
+  if (
+    !/^[6-9][0-9]{9}$/.test(raw)
+  ) {
+
+    throw new Error(
+      "Parent WhatsApp number is invalid. It must be a 10-digit Indian mobile number starting with 6, 7, 8 or 9."
+    );
+
+  }
+
+
+  /*
+  WhatsApp wa.me format:
+  91 + 10 digit number
+  No +, spaces or hyphens.
+  */
+
+  return "91" + raw;
+
+}
+
+
+/* ============================================================
+   OPEN WHATSAPP
+   ============================================================ */
+
+async function openWhatsApp() {
+
+  if (!currentStudent) {
+
+    showStatus(
+      "Please scan or enter a Student ID first.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  const message =
+    document
+      .getElementById("messageText")
+      .value
+      .trim();
+
+
+  const messageType =
+    document
+      .getElementById("messageType")
+      .value;
+
+
+  if (!messageType) {
+
+    showStatus(
+      "Please select a message type.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  if (!message) {
+
+    showStatus(
+      "Message is empty. Please enter a message.",
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  let phone;
+
+
+  try {
+
+    phone =
+      getWhatsAppNumber();
+
+  }
+
+  catch (error) {
+
+    showStatus(
+      error.message,
+      "error"
+    );
+
+    return;
+
+  }
+
+
+  /*
+  Teacher clicks the button.
+  WhatsApp opens with the message prepared.
+  The teacher must review and press Send.
+  */
+
+  const whatsappUrl =
+    "https://wa.me/" +
+    phone +
+    "?text=" +
+    encodeURIComponent(message);
+
+
+  /*
+  Log that WhatsApp was opened.
+  IMPORTANT:
+  This does NOT mean the teacher pressed
+  WhatsApp's Send button.
+  */
+
+  try {
+
+    await apiRequest({
+
+      action: "log",
+
+      secretKey: SECRET_KEY,
+
+      studentId:
+        currentStudent.studentId,
+
+      messageType:
+        messageType,
+
+      messageText:
+        message,
+
+      scannedBy:
+        TEACHER_NAME,
+
+      whatsappOpened:
+        "Yes"
+
+    });
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Logging failed:",
+      error
+    );
+
+    /*
+    Do not stop WhatsApp because of a logging
+    problem. The teacher can still continue.
+    */
+
+  }
+
+
+  whatsappOpened = true;
+
+
+  /*
+  Open WhatsApp in a new tab/window.
+  */
+
+  window.open(
+    whatsappUrl,
+    "_blank"
+  );
+
+
+  showStatus(
+    "WhatsApp opened with the message prepared. Please review the message and press Send in WhatsApp.",
+    "success-status"
+  );
+
+}
+
+
+/* ============================================================
+   INITIALIZATION
+   ============================================================ */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    if (!checkConfiguration()) {
+      return;
+    }
+
+    showStatus(
+      "Application ready. Start the scanner or enter a Student ID manually.",
+      "info"
+    );
+
+  }
+);
+
+</script>
+
+</body>
+</html>
