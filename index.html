@@ -906,22 +906,21 @@ async function lookupStudent(studentId) {
 
 
     if (!result.success) {
-
-      showStatus(
-        result.message ||
-        "Student not found.",
-        "error"
-      );
-
-      clearStudentDisplay();
-
-      return;
-
-    }
+  showStatus(
+    result.error ||
+    result.message ||
+    "Student lookup failed.",
+    "error"
+  );
+  clearStudentDisplay();
+  return;
+}
 
 
     currentStudent =
       result.student;
+    currentStudent.phoneValid = result.phoneValid;
+currentStudent.phoneError = result.phoneError;
 
 
     displayStudent(
